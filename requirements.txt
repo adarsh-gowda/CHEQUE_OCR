@@ -1,2 +1,5 @@
 opencv-python
 pytesseract
+ipykernel
+pandas
+openpyxl
