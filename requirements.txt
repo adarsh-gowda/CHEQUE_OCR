@@ -3,3 +3,4 @@ pytesseract
 ipykernel
 pandas
 openpyxl
+streamlit

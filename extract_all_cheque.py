@@ -1,9 +1,10 @@
 import os
 import cv2
 import pytesseract
+import pandas as pd
 import re
-import numpy as np
 from pytesseract import Output
+from datetime import datetime
 
 # === Template Matching for Regions Based on Keywords ===
 def locate_template_region(img, keyword):
@@ -82,11 +83,8 @@ def extract_bank_name(full_text, ifsc_code):
     return "Unknown"
 
 # === Main Cheque Processing Function ===
-def process_cheque_image_file(uploaded_file):
-    # Convert uploaded file to OpenCV image
-    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-
+def process_cheque(image_path):
+    img = cv2.imread(image_path)
     full_text = pytesseract.image_to_string(img).upper()
 
     ifsc_region = locate_template_region(img, "IFSC")
@@ -104,9 +102,33 @@ def process_cheque_image_file(uploaded_file):
     bank_name = extract_bank_name(full_text, ifsc_code)
 
     return {
-        "Filename": uploaded_file.name,
+        "Filename": os.path.basename(image_path),
         "Bank Name": bank_name,
         "IFSC Code": ifsc_code,
         "Amount": amount,
         "Date": date_final
     }
+
+# # === Excel Append ===
+# def append_to_excel(new_data, excel_path="cheque_data_output.xlsx"):
+#     if os.path.exists(excel_path):
+#         df = pd.read_excel(excel_path)
+#     else:
+#         df = pd.DataFrame(columns=new_data.keys())
+
+#     if new_data["Filename"] not in df["Filename"].values:
+#         df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
+#         df.to_excel(excel_path, index=False)
+
+# # === Batch Run ===
+# def process_folder(folder_path):
+#     for filename in os.listdir(folder_path):
+#         if filename.lower().endswith((".jpg", ".jpeg", ".png")):
+#             image_path = os.path.join(folder_path, filename)
+#             print(f"Processing: {filename}")
+#             result = process_cheque(image_path)
+#             append_to_excel(result)
+#     print("✅ All cheques processed and saved to Excel.")
+
+# # Example usage:
+# process_folder("../CHEQUE_OCR/Images")
