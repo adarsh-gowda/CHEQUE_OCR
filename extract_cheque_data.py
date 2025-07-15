@@ -29,26 +29,39 @@ def extract_amount(region_text):
         return str(max([float(m) for m in match]))
     return ""
 
-def extract_date(region_text):
+# --- Date Utilities ---
+def extract_date(text):
+    text = text.replace("O", "0")
     patterns = [
-        r'(\d{1,2})[-/.]([A-Z]{3})[-/.](\d{4})',
-        r'(\d{2})[.-](\d{2})[.-](\d{4})'
+        r'\b\d{2}[-.]\d{2}[-.]\d{4}\b',
+        r'\b\d{1,2}-[A-Za-z]{3}-\d{4}\b',
+        r'\b\d{1,2}[/-][A-Za-z]{3}[/-]\d{4}\b'
     ]
-    month_map = {
-        "JAN": "01", "FEB": "02", "MAR": "03", "APR": "04",
-        "MAY": "05", "JUN": "06", "JUL": "07", "AUG": "08",
-        "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12"
-    }
     for pattern in patterns:
-        match = re.search(pattern, region_text.upper())
+        match = re.search(pattern, text)
         if match:
-            groups = match.groups()
-            if len(groups) == 3:
-                if groups[1].isalpha():
-                    return f"{int(groups[0]):02d}-{month_map.get(groups[1][:3], '00')}-{groups[2]}"
-                else:
-                    return f"{groups[0]}-{groups[1]}-{groups[2]}"
+            return match.group()
     return ""
+
+def normalize_date(date_str):
+    try:
+        month_map = {
+            "JAN": "01", "FEB": "02", "MAR": "03", "APR": "04",
+            "MAY": "05", "JUN": "06", "JUL": "07", "AUG": "08",
+            "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12"
+        }
+        match = re.match(r'(\d{1,2})[-/\s]?([A-Z]{3})[-/\s]?(\d{4})', date_str.upper())
+        if match:
+            day, month_abbr, year = match.groups()
+            return f"{int(day):02d}-{month_map.get(month_abbr[:3], '00')}-{year}"
+
+        match = re.match(r'(\d{2})[.-](\d{2})[.-](\d{4})', date_str)
+        if match:
+            day, month, year = match.groups()
+            return f"{day}-{month}-{year}"
+    except:
+        pass
+    return date_str
 
 def extract_bank_name(full_text, ifsc_code):
     KNOWN_BANKS = [
@@ -84,7 +97,8 @@ def process_cheque(image_path):
 
     ifsc_code = extract_ifsc(ifsc_text)
     amount = extract_amount(amount_text)
-    date = extract_date(date_text)
+    date_raw = extract_date(full_text)
+    date_final = normalize_date(date_raw)
     bank_name = extract_bank_name(full_text, ifsc_code)
 
     return {
@@ -92,7 +106,7 @@ def process_cheque(image_path):
         "Bank Name": bank_name,
         "IFSC Code": ifsc_code,
         "Amount": amount,
-        "Date": date
+        "Date": date_final
     }
 
 # === Excel Append ===
