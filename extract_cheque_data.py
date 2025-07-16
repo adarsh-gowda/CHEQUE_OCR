@@ -42,6 +42,7 @@ def extract_date(text):
             return match.group()
     return ""
 
+
 def normalize_date(date_str):
     try:
         month_map = {
