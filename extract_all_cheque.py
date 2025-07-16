@@ -29,6 +29,7 @@ def extract_amount(region_text):
         return str(max([float(m) for m in match]))
     return ""
 
+
 # --- Date Utilities ---
 def extract_date(text):
     text = text.replace("O", "0")
